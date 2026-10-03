@@ -1,0 +1,40 @@
+name: supportdesk
+
+services:
+  nginx:
+    image: nginx:stable-alpine
+    ports:
+      - "${NGINX_PORT:-8080}:80"
+    volumes:
+      - ./nginx/default.conf:/etc/nginx/conf.d/default.conf:ro
+      - ./laravel/public:/var/www/html/public:ro
+    depends_on:
+      - laravel
+      - node
+
+  laravel:
+    build:
+      context: ./laravel
+      args:
+        UID: ${HOST_UID:-1000}
+        GID: ${HOST_GID:-1000}
+    image: supportdesk-laravel
+    volumes:
+      - ./laravel:/var/www/html
+
+  python:
+    build: ./python-service
+    image: supportdesk-python
+    command: [ "uvicorn", "app.main:app", "--host", "0.0.0.0", "--port", "8000", "--reload" ]
+    volumes:
+      - ./python-service/app:/app/app
+    ports:
+      - "${PYTHON_PORT:-8001}:8000"
+
+  node:
+    build: ./node-service
+    image: supportdesk-node
+    environment:
+      PORT: 3000
+    ports:
+      - "${NODE_PORT:-3000}:3000"
