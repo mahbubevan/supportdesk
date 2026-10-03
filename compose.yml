@@ -1,5 +1,24 @@
 name: supportdesk
 
+# Shared config for every service that runs the Laravel image
+x-laravel: &laravel
+  image: supportdesk-laravel
+  environment:
+    DB_CONNECTION: mysql
+    DB_HOST: mysql
+    DB_PORT: 3306
+    DB_DATABASE: ${DB_DATABASE:-supportdesk}
+    DB_USERNAME: ${DB_USERNAME:-supportdesk}
+    DB_PASSWORD: ${DB_PASSWORD:?DB_PASSWORD is required}
+    REDIS_CLIENT: phpredis
+    REDIS_HOST: valkey
+    REDIS_PORT: 6379
+  volumes:
+    - ./laravel:/var/www/html
+  depends_on:
+    - mysql
+    - valkey
+
 services:
   nginx:
     image: nginx:stable-alpine
@@ -13,27 +32,18 @@ services:
       - node
 
   laravel:
+    <<: *laravel
     build:
       context: ./laravel
       args:
         UID: ${HOST_UID:-1000}
         GID: ${HOST_GID:-1000}
-    image: supportdesk-laravel
-    environment:
-      DB_CONNECTION: mysql
-      DB_HOST: mysql
-      DB_PORT: 3306
-      DB_DATABASE: ${DB_DATABASE:-supportdesk}
-      DB_USERNAME: ${DB_USERNAME:-supportdesk}
-      DB_PASSWORD: ${DB_PASSWORD:?DB_PASSWORD is required}
-      REDIS_CLIENT: phpredis
-      REDIS_HOST: valkey
-      REDIS_PORT: 6379
-    volumes:
-      - ./laravel:/var/www/html
-    depends_on:
-      - mysql
-      - valkey
+
+  worker:
+    <<: *laravel
+    pull_policy: never
+    command: [ "php", "artisan", "queue:work", "--sleep=1", "--tries=3", "--timeout=60", "--max-time=3600" ]
+    stop_grace_period: 70s
 
   mysql:
     image: mysql:8.4
