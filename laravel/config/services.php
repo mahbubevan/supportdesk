@@ -40,4 +40,10 @@ return [
         'timeout' => (int) env('PYTHON_SERVICE_TIMEOUT', 5),
     ],
 
+    'node' => [
+        'url' => env('NODE_SERVICE_URL', 'http://node:3000'),
+        'timeout' => (int) env('NODE_SERVICE_TIMEOUT', 3),
+        'internal_token' => env('NODE_INTERNAL_TOKEN'),
+    ],
+
 ];
