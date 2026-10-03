@@ -20,6 +20,12 @@ x-laravel: &laravel
     - valkey
 
 services:
+
+  scheduler:
+    <<: *laravel
+    pull_policy: never
+    command: [ "php", "artisan", "schedule:work" ]
+    init: true
   nginx:
     image: nginx:stable-alpine
     ports:
