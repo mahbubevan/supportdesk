@@ -19,8 +19,29 @@ services:
         UID: ${HOST_UID:-1000}
         GID: ${HOST_GID:-1000}
     image: supportdesk-laravel
+    environment:
+      DB_CONNECTION: mysql
+      DB_HOST: mysql
+      DB_PORT: 3306
+      DB_DATABASE: ${DB_DATABASE:-supportdesk}
+      DB_USERNAME: ${DB_USERNAME:-supportdesk}
+      DB_PASSWORD: ${DB_PASSWORD:?DB_PASSWORD is required}
     volumes:
       - ./laravel:/var/www/html
+    depends_on:
+      - mysql
+
+  mysql:
+    image: mysql:8.4
+    environment:
+      MYSQL_DATABASE: ${DB_DATABASE:-supportdesk}
+      MYSQL_USER: ${DB_USERNAME:-supportdesk}
+      MYSQL_PASSWORD: ${DB_PASSWORD:?DB_PASSWORD is required}
+      MYSQL_ROOT_PASSWORD: ${DB_ROOT_PASSWORD:?DB_ROOT_PASSWORD is required}
+    volumes:
+      - mysql_data:/var/lib/mysql
+    ports:
+      - "${MYSQL_PORT:-3307}:3306"
 
   python:
     build: ./python-service
@@ -38,3 +59,6 @@ services:
       PORT: 3000
     ports:
       - "${NODE_PORT:-3000}:3000"
+
+volumes:
+  mysql_data:
